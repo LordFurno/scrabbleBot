@@ -41,6 +41,22 @@ def canMakeWord(avail, used):
                 return False
     return True
 
+def findBlanks(avail, used):
+    """
+    Has to be used AFTER canMakeWord()
+    Returns a list with inex, letter that contains the letter that comes from the blank
+    """
+    availLetters = [i[2] for i in used]
+    rack = Counter(availLetters)
+    wildcards = []
+    for index, letter in enumerate(availLetters):
+        if rack[letter] > 0:
+            rack[letter] -= 1
+        else:
+            wildcards.append(used[index][:-1])
+
+    return wildcards
+
 #Pygame visualization setup
 class ScrabbleVisualizer:
     def __init__(self, board_obj):
@@ -211,8 +227,8 @@ board = Board()
 bag = LetterBag()
 
 players = [
-    {"name": "Bot 1", "rack": bag.draw(7), "score": 0, "function": getMove},
-    {"name": "Bot 2", "rack": bag.draw(7), "score": 0, "function": getMove},
+    {"name": "Bot 1", "rack": bag.draw(7), "score": 0, "function": getMove, "illegal": False},
+    {"name": "Bot 2", "rack": bag.draw(7), "score": 0, "function": getMove, "illegal": False},
 ]
 consec_passes = 0
 moves_played = 0
@@ -269,6 +285,7 @@ while running:
         #Ask bot for its move
         try:
             placements = bot_function(list(rack), [row[:] for row in board.state], dict(board.bonus))
+            
             print(f"{name} returned: {placements}")
         except Exception as e:
             print(f"{name} crashed with error: {e}")
@@ -300,20 +317,25 @@ while running:
                                 f"{name} used invalid tiles - Game Over!")
             pygame.time.wait(3000)
             game_over = True
+            players [turn % 2]["illegal"] = True
             continue
         
+        
+
         #Check if move is legal
         legal, msg, details = board.is_legal(placements, isFirst)
         
         if not legal:
             print(f"{name} has attempted an illegal move: {msg}")
+            players [turn % 2]["illegal"] = True
             visualizer.draw_board(players, turn, last_move_info, f"{name} illegal move: {msg}")
             pygame.time.wait(3000)
             game_over = True
             continue
         
         #Process legal move
-        result = board.score_move(placements, validate=False, isFirstMove=isFirst)
+
+        result = board.score_move(placements, validate=False, isFirstMove=isFirst, blankLocations=findBlanks(rack, placements))
         current["score"] += result["score"]
         removeTilesFromRack(rack, placements)
         draw_n = 7 - len(rack)
@@ -356,7 +378,11 @@ while running:
     #Update display
     if game_over:
         scores = [p["score"] for p in players]
-        if scores[0] > scores[1]:
+        if players [turn % 2]["illegal"] == True:
+            message = f"{current["name"]} has made an illegal move. {players[(turn+1)%2]["name"]} has won."
+            winner = None
+        
+        elif scores[0] > scores[1]:
             winner = players[0]["name"]
             margin = scores[0] - scores[1]
         elif scores[1] > scores[0]:
@@ -368,17 +394,15 @@ while running:
         
         if winner == "TIE":
             message = f"Game Over - It's a TIE! Press SPACE to exit"
-        else:
+        elif winner is not None:
             message = f"Game Over - {winner} wins by {margin} points! Press SPACE to exit"
         
         visualizer.draw_board(players, turn, last_move_info, message)
         print(f"\nFinal scores:")
         for p in players:
             print(f"{p['name']}: {p['score']}")
-        if winner != "TIE":
-            print(f"\nWinner: {winner} by {margin} points!")
-        else:
-            print("\nGame is a tie!")
+        print(message)
+        break
     else:
         msg = "Press SPACE for next move | Press A to toggle auto-play | ESC to quit"
         visualizer.draw_board(players, turn, last_move_info, msg)
