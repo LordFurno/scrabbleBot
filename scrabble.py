@@ -271,7 +271,7 @@ class Board():
         }
         return True, "", details
 
-    def score_move(self, placements, validate, isFirstMove):
+    def score_move(self, placements, validate, isFirstMove, blankLocations):
         #Placements is a list [(r,c, letter)]
         #This scores the move assuming that it is a valid move
 
@@ -310,21 +310,28 @@ class Board():
         #Score main word
         mainLetterVals = []
         mainWordMult = 1
+        print(f"HERE is mainPositions")
+        print(mainPositions )
         for r,c in mainPositions:
             ch = letter_at(r,c)
             new = (r,c) in pos #Not reused from exsisting letters
-            base = baseValue(ch)
+
             letterMult = 1
-            if new:
-                bonus = self.bonus.get((r,c))
-                if bonus == "DL":
-                    letterMult = 2
-                elif bonus == "TL":
-                    letterMult = 3
-                elif bonus == "DW":
-                    mainWordMult *= 2
-                elif bonus == "TW":
-                    mainWordMult *= 3
+            if (r,c) in blankLocations:
+                base = 0
+            else:
+                base = baseValue(ch)
+                
+                if new:
+                    bonus = self.bonus.get((r,c))
+                    if bonus == "DL":
+                        letterMult = 2
+                    elif bonus == "TL":
+                        letterMult = 3
+                    elif bonus == "DW":
+                        mainWordMult *= 2
+                    elif bonus == "TW":
+                        mainWordMult *= 3
             mainLetterVals.append(base*letterMult)
         mainWordScore = sum(mainLetterVals) * mainWordMult
         #Score cross words
@@ -349,18 +356,21 @@ class Board():
                     for rrr,ccc in positions:
                         ch2 = letter_at(rrr,ccc)
                         new = (rrr,ccc) in pos
-                        lv = baseValue(ch2)
                         lm = 1
-                        if new:
-                            bonus = self.bonus.get((rrr,ccc))
-                            if bonus == "DL":
-                                lm = 2
-                            elif bonus == "TL":
-                                lm = 3
-                            elif bonus == "DW":
-                                cwWordMult *= 2
-                            elif bonus == "TW":
-                                cwWordMult *= 3
+                        if (rrr,ccc) in blankLocations:
+                            lv = 0
+                        else:
+                            lv = baseValue(ch2)
+                            if new:
+                                bonus = self.bonus.get((rrr,ccc))
+                                if bonus == "DL":
+                                    lm = 2
+                                elif bonus == "TL":
+                                    lm = 3
+                                elif bonus == "DW":
+                                    cwWordMult *= 2
+                                elif bonus == "TW":
+                                    cwWordMult *= 3
                         cwScore += lv*lm #letter value * letter multiplier
                     cwScore *= cwWordMult 
                     crossWords.append(("".join(x.upper() for x in letters),(start,c),"V", cwScore))
@@ -382,18 +392,22 @@ class Board():
                     for (rrr, ccc) in positions:
                         ch2 = letter_at(rrr, ccc)
                         new = (rrr, ccc) in pos
-                        lv = baseValue(ch2)
                         lm = 1
-                        if new:
-                            bonus = self.bonus.get((rrr, ccc))
-                            if bonus == "DL":
-                                lm = 2
-                            elif bonus == "TL":
-                                lm = 3
-                            elif bonus == "DW":
-                                cwWordMult *= 2
-                            elif bonus == "TW":
-                                cwWordMult *= 3
+                        
+                        if (rrr,ccc) in blankLocations:
+                            lv = 0
+                        else:
+                            lv = baseValue(ch2)
+                            if new:
+                                bonus = self.bonus.get((rrr, ccc))
+                                if bonus == "DL":
+                                    lm = 2
+                                elif bonus == "TL":
+                                    lm = 3
+                                elif bonus == "DW":
+                                    cwWordMult *= 2
+                                elif bonus == "TW":
+                                    cwWordMult *= 3
                         cwScore += lv*lm
                     cwScore *= cwWordMult
                     crossWords.append(("".join(x.upper() for x in letters),(r,start),"H", cwScore))
