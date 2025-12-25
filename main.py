@@ -46,12 +46,12 @@ def findBlanks(avail, used):
     Has to be used AFTER canMakeWord()
     Returns a list with inex, letter that contains the letter that comes from the blank
     """
-    availLetters = [i[2] for i in used]
-    rack = Counter(availLetters)
+    usedLetters = [i[2] for i in used]
+    rackCounter = Counter(avail)
     wildcards = []
-    for index, letter in enumerate(availLetters):
-        if rack[letter] > 0:
-            rack[letter] -= 1
+    for index, letter in enumerate(usedLetters):
+        if rackCounter[letter] > 0:
+            rackCounter[letter] -= 1
         else:
             wildcards.append(used[index][:-1])
 
@@ -292,6 +292,7 @@ while running:
             placements = []
             game_over = True
             visualizer.draw_board(players, turn, last_move_info, f"{name} CRASHED - Game Over!")
+            players [turn % 2]["illegal"] = True
             pygame.time.wait(3000)
             continue
         
@@ -334,7 +335,8 @@ while running:
             continue
         
         #Process legal move
-
+        print("????????")
+        print(placements)
         result = board.score_move(placements, validate=False, isFirstMove=isFirst, blankLocations=findBlanks(rack, placements))
         current["score"] += result["score"]
         removeTilesFromRack(rack, placements)
