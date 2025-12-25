@@ -310,8 +310,7 @@ class Board():
         #Score main word
         mainLetterVals = []
         mainWordMult = 1
-        print(f"HERE is mainPositions")
-        print(mainPositions )
+
         for r,c in mainPositions:
             ch = letter_at(r,c)
             new = (r,c) in pos #Not reused from exsisting letters
@@ -446,4 +445,38 @@ class Board():
                     return False
         return True
 
+# from collections import Counter
+# def findBlanks(avail, used):
+#     """
+#     Has to be used AFTER canMakeWord()
+#     Returns a list with inex, letter that contains the letter that comes from the blank
+#     """
+#     usedLetters = [i[2] for i in used]
+#     rackCounter = Counter(avail)
+#     wildcards = []
+#     for index, letter in enumerate(usedLetters):
+#         if rackCounter[letter] > 0:
+#             rackCounter[letter] -= 1
+#         else:
+#             wildcards.append(used[index][:-1])
 
+#     return wildcards
+# def canMakeWord(avail, used):
+#     rack = Counter(avail)
+#     wordCount = Counter(used)
+#     wildcards = rack.get("?",0)
+#     needed = 0
+#     for letter,count in wordCount.items():
+#         missing = count - rack.get(letter,0)
+#         if missing>0:
+#             needed += missing
+#             if needed > wildcards:
+#                 return False
+#     return True
+
+# test = Board()
+# rack = ["E","?","Q","I","T","Y","X"]
+# placements = [(7, 7, "E"), (7, 8, "Q"), (7, 9, "U"), (7, 10, "I"), (7, 11, "T"),(7,12,"Y")]
+# letters = [ch for r, c, ch in placements]
+# print(canMakeWord(rack,letters))
+# print(test.score_move(placements, validate=True, isFirstMove=True, blankLocations=findBlanks(rack, placements)))
