@@ -321,16 +321,16 @@ class Board():
             else:
                 base = baseValue(ch)
                 
-                if new:
-                    bonus = self.bonus.get((r,c))
-                    if bonus == "DL":
-                        letterMult = 2
-                    elif bonus == "TL":
-                        letterMult = 3
-                    elif bonus == "DW":
-                        mainWordMult *= 2
-                    elif bonus == "TW":
-                        mainWordMult *= 3
+            if new:
+                bonus = self.bonus.get((r,c))
+                if bonus == "DL":
+                    letterMult = 2
+                elif bonus == "TL":
+                    letterMult = 3
+                elif bonus == "DW":
+                    mainWordMult *= 2
+                elif bonus == "TW":
+                    mainWordMult *= 3
             mainLetterVals.append(base*letterMult)
         mainWordScore = sum(mainLetterVals) * mainWordMult
         #Score cross words
@@ -339,7 +339,7 @@ class Board():
             if mainDir == "H":
                 #Vertical crosses
                 start = r
-                while start-1>=0 and letter_at(start,c) is not None:
+                while start-1>=0 and letter_at(start-1,c) is not None:
                     start -= 1
                 rr = start
                 letters = []
@@ -360,16 +360,16 @@ class Board():
                             lv = 0
                         else:
                             lv = baseValue(ch2)
-                            if new:
-                                bonus = self.bonus.get((rrr,ccc))
-                                if bonus == "DL":
-                                    lm = 2
-                                elif bonus == "TL":
-                                    lm = 3
-                                elif bonus == "DW":
-                                    cwWordMult *= 2
-                                elif bonus == "TW":
-                                    cwWordMult *= 3
+                        if new:
+                            bonus = self.bonus.get((rrr,ccc))
+                            if bonus == "DL":
+                                lm = 2
+                            elif bonus == "TL":
+                                lm = 3
+                            elif bonus == "DW":
+                                cwWordMult *= 2
+                            elif bonus == "TW":
+                                cwWordMult *= 3
                         cwScore += lv*lm #letter value * letter multiplier
                     cwScore *= cwWordMult 
                     crossWords.append(("".join(x.upper() for x in letters),(start,c),"V", cwScore))
@@ -397,16 +397,16 @@ class Board():
                             lv = 0
                         else:
                             lv = baseValue(ch2)
-                            if new:
-                                bonus = self.bonus.get((rrr, ccc))
-                                if bonus == "DL":
-                                    lm = 2
-                                elif bonus == "TL":
-                                    lm = 3
-                                elif bonus == "DW":
-                                    cwWordMult *= 2
-                                elif bonus == "TW":
-                                    cwWordMult *= 3
+                        if new:
+                            bonus = self.bonus.get((rrr, ccc))
+                            if bonus == "DL":
+                                lm = 2
+                            elif bonus == "TL":
+                                lm = 3
+                            elif bonus == "DW":
+                                cwWordMult *= 2
+                            elif bonus == "TW":
+                                cwWordMult *= 3
                         cwScore += lv*lm
                     cwScore *= cwWordMult
                     crossWords.append(("".join(x.upper() for x in letters),(r,start),"H", cwScore))
@@ -445,38 +445,51 @@ class Board():
                     return False
         return True
 
-# from collections import Counter
-# def findBlanks(avail, used):
-#     """
-#     Has to be used AFTER canMakeWord()
-#     Returns a list with inex, letter that contains the letter that comes from the blank
-#     """
-#     usedLetters = [i[2] for i in used]
-#     rackCounter = Counter(avail)
-#     wildcards = []
-#     for index, letter in enumerate(usedLetters):
-#         if rackCounter[letter] > 0:
-#             rackCounter[letter] -= 1
-#         else:
-#             wildcards.append(used[index][:-1])
+from collections import Counter
+def findBlanks(avail, used):
+    """
+    Has to be used AFTER canMakeWord()
+    Returns a list with inex, letter that contains the letter that comes from the blank
+    """
+    usedLetters = [i[2] for i in used]
+    rackCounter = Counter(avail)
+    wildcards = []
+    for index, letter in enumerate(usedLetters):
+        if rackCounter[letter] > 0:
+            rackCounter[letter] -= 1
+        else:
+            wildcards.append(used[index][:-1])
 
-#     return wildcards
-# def canMakeWord(avail, used):
-#     rack = Counter(avail)
-#     wordCount = Counter(used)
-#     wildcards = rack.get("?",0)
-#     needed = 0
-#     for letter,count in wordCount.items():
-#         missing = count - rack.get(letter,0)
-#         if missing>0:
-#             needed += missing
-#             if needed > wildcards:
-#                 return False
-#     return True
+    return wildcards
+def canMakeWord(avail, used):
+    rack = Counter(avail)
+    wordCount = Counter(used)
+    wildcards = rack.get("?",0)
+    needed = 0
+    for letter,count in wordCount.items():
+        missing = count - rack.get(letter,0)
+        if missing>0:
+            needed += missing
+            if needed > wildcards:
+                return False
+    return True
 
 # test = Board()
 # rack = ["E","?","Q","I","T","Y","X"]
+# placements = [(7, 7, "A"), (7, 8, "D"), (7, 9, "A"), (7, 10, "G"), (7, 11, "I"),(7,12,"O")]
+# letters = [ch for r, c, ch in placements]
+# print(canMakeWord(rack,letters))
+# print(test.score_move(placements, validate=True, isFirstMove=True, blankLocations=[]))
+
+
+# placements = [(8, 7, "H"), (8, 8, "E"), (8, 9, "W")]
+# print(test.score_move(placements, validate=True, isFirstMove=False, blankLocations=[]))
+
+# test = Board()
+# rack = ["?","Q","U","I","T","Y","X"]
 # placements = [(7, 7, "E"), (7, 8, "Q"), (7, 9, "U"), (7, 10, "I"), (7, 11, "T"),(7,12,"Y")]
 # letters = [ch for r, c, ch in placements]
 # print(canMakeWord(rack,letters))
 # print(test.score_move(placements, validate=True, isFirstMove=True, blankLocations=findBlanks(rack, placements)))
+
+
