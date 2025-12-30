@@ -335,9 +335,11 @@ while running:
             continue
         
         #Process legal move
-        print("????????")
-        print(placements)
-        result = board.score_move(placements, validate=False, isFirstMove=isFirst, blankLocations=findBlanks(rack, placements))
+        # print("????????")
+        # print(placements)
+        newBlanks = findBlanks(rack, placements)
+        board.updateBlanks(newBlanks)
+        result = board.score_move(placements, validate=False, isFirstMove=isFirst)
         current["score"] += result["score"]
         removeTilesFromRack(rack, placements)
         draw_n = 7 - len(rack)
