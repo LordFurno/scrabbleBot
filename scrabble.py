@@ -93,6 +93,7 @@ class Board():
     
     def updateBlanks(self, newBlanks):
         self.blankLocations.extend(newBlanks)
+        # print(newBlanks)
     
     
     def is_legal(self, placements, isFirstMove):
@@ -145,6 +146,7 @@ class Board():
             for c in range(minC, maxC+1):
                 if letter_at(r,c) is None:
                     return False, "Gap in tile placements", {}
+                
         elif len(cols) == 1 and len(rows)>1:
             orientation = "V"
             c = next(iter(cols))
@@ -176,7 +178,11 @@ class Board():
         #Now build the word
         mainWord = ""
         mainPos = []
-        if orientation == "H" or orientation is None and len(placements)>0:
+        wordStart = None
+        wordDir = None
+        
+        # Try horizontal first
+        if orientation == "H" or (orientation is None and len(placements)>0):
             #Pick row (for single tile pick its row)
             r = next(iter(rows))
             minC = min(cols)
@@ -194,24 +200,44 @@ class Board():
             mainWord = "".join(ch.upper() for ch in word)
             wordStart = (r, start)
             wordDir = "H"
-        if orientation == "V" or (orientation is None and len(placements) == 1 and mainWord == ""):
+        
+        # Try vertical (for single tile, check if vertical word is longer)
+        if orientation == "V" or (orientation is None and len(placements) == 1):
             if cols:
                 c = next(iter(cols))
             else:
                 c = placements[0][1]
-            minR = min(rows)
-            start= minR
+
+            if rows:
+                minR = min(rows)
+            else:
+                minR = placements[0][0]
+
+            start = minR
             while start-1 >= 0 and letter_at(start-1,c) is not None:
                 start-=1
             word = []
             r = start
+            vertPos = []
             while r<self.size and letter_at(r,c) is not None:
                 word.append(letter_at(r,c))
-                mainPos.append((r,c))
+                vertPos.append((r,c))
                 r+=1
-            mainWord = "".join(ch.upper() for ch in word)
-            wordStart = (r,c)
-            wordDir = "V"
+            vertWord = "".join(ch.upper() for ch in word)
+            
+            # For single tile placement, choose the longer word as main word
+            if orientation is None and len(placements) == 1:
+                if len(vertWord) > len(mainWord):
+                    mainWord = vertWord
+                    wordStart = (start, c)
+                    wordDir = "V"
+                    mainPos = vertPos
+
+            elif orientation == "V":
+                mainWord = vertWord
+                wordStart = (start, c)
+                wordDir = "V"
+                mainPos = vertPos
     
         #THe formed word has be at least 2 long
         formed = False
@@ -335,6 +361,7 @@ class Board():
                     mainWordMult *= 3
             mainLetterVals.append(base*letterMult)
         mainWordScore = sum(mainLetterVals) * mainWordMult
+        
         #Score cross words
         crossWords = []
         for r,c,ch in placements:
@@ -352,6 +379,13 @@ class Board():
                     rr+=1
                 
                 if len(letters)>1:
+                    cross_word_str = "".join(x.upper() for x in letters)
+                    cross_start_pos = (start, c)
+                    
+                    #Skip if this cross word is actually the main word
+                    if cross_word_str == mainWord and cross_start_pos == mainStart and mainDir == "V":
+                        continue
+                    
                     cwScore = 0
                     cwWordMult = 1
                     for rrr,ccc in positions:
@@ -374,7 +408,7 @@ class Board():
                                 cwWordMult *= 3
                         cwScore += lv*lm #letter value * letter multiplier
                     cwScore *= cwWordMult 
-                    crossWords.append(("".join(x.upper() for x in letters),(start,c),"V", cwScore))
+                    crossWords.append((cross_word_str,(start,c),"V", cwScore))
             else:
                 #Horizontal crosses
                 start = c
@@ -387,7 +421,15 @@ class Board():
                     letters.append(letter_at(r,cc))
                     positions.append((r,cc))
                     cc += 1
+                    
                 if len(letters)>1:
+                    cross_word_str = "".join(x.upper() for x in letters)
+                    cross_start_pos = (r, start)
+                    
+                    #CRITICAL FIX: Skip if this cross word is actually the main word
+                    if cross_word_str == mainWord and cross_start_pos == mainStart and mainDir == "H":
+                        continue
+                    
                     cwScore = 0
                     cwWordMult = 1
                     for (rrr, ccc) in positions:
@@ -411,7 +453,7 @@ class Board():
                                 cwWordMult *= 3
                         cwScore += lv*lm
                     cwScore *= cwWordMult
-                    crossWords.append(("".join(x.upper() for x in letters),(r,start),"H", cwScore))
+                    crossWords.append((cross_word_str,(r,start),"H", cwScore))
         totalCross = sum(i[3] for i in crossWords)
         totalScore = mainWordScore + totalCross
 
@@ -446,7 +488,6 @@ class Board():
                 if self.state[r][c] != "":
                     return False
         return True
-
 from collections import Counter
 def findBlanks(avail, used):
     """
@@ -476,14 +517,41 @@ def canMakeWord(avail, used):
                 return False
     return True
 
+# test = Board()
 
+# placements = [(6, 7, "L"), (7, 7, "A"), (8,7, "B")]
+# print(test.score_move(placements, validate=True, isFirstMove=True))
+
+# test.print_board()  
+
+# placements = [(6,6,"P"), (6,8, "A"),(6,9,"N"),(6,10,"T"),(6,11,"A"),(6,12,"R")]
+# print(test.score_move(placements, validate=True, isFirstMove=False))
+
+# test.print_board()
+
+# placements = [(2,11,"P"),(3,11,"O"),(4,11,"T"),(5,11,"T"),(7,11,"G"),(8,11,"E")]
+# print(test.score_move(placements, validate=True, isFirstMove=False))
+
+# test.print_board()
+
+# placements = [(4,4,"L"),(4,5,"E"),(4,6,"E"),(4,7,"R"),(4,8,"I"),(4,9,"E"),(4,10,"S")]
+# print(test.score_move(placements, validate=True, isFirstMove=False))
+
+# test.print_board()
+
+# placements = [(3,8,"Q")]
+# print(test.score_move(placements, validate=True, isFirstMove=False))
+
+# test.print_board()
 
 # test = Board()
 # rack = ["E","?","Q","I","T","Y","X"]
 # placements = [(7, 7, "A"), (7, 8, "D"), (7, 9, "A"), (7, 10, "G"), (7, 11, "I"),(7,12,"O")]
 # letters = [ch for r, c, ch in placements]
-# print(canMakeWord(rack,letters))
-# print(test.score_move(placements, validate=True, isFirstMove=True, blankLocations=[]))
+# print(test.score_move(placements, validate=True, isFirstMove=False))
+# placements = [(8, 7, "H"), (8, 8, "E"), (8, 9, "W")]
+# print(test.score_move(placements, validate=True, isFirstMove=False))
+
 
 
 # test = Board()
@@ -500,16 +568,7 @@ def canMakeWord(avail, used):
 # placements = [(6, 4, "T"), (8, 4, "U"), (9, 4, "J"), (10, 4, "A")]
 # print(test.score_move(placements, validate=True, isFirstMove=False))
 
-#Bug is that board does'nt keep track if a blank is on there or not
 
-# placements = [(8, 7, "H"), (8, 8, "E"), (8, 9, "W")]
-# print(test.score_move(placements, validate=True, isFirstMove=False, blankLocations=[]))
 
-# test = Board()
-# rack = ["?","Q","U","I","T","Y","X"]
-# placements = [(7, 7, "E"), (7, 8, "Q"), (7, 9, "U"), (7, 10, "I"), (7, 11, "T"),(7,12,"Y")]
-# letters = [ch for r, c, ch in placements]
-# print(canMakeWord(rack,letters))
-# print(test.score_move(placements, validate=True, isFirstMove=True, blankLocations=findBlanks(rack, placements)))
 
 
